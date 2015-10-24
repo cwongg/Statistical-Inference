@@ -1,0 +1,95 @@
+---
+title: "Statistical Inference Project - Analysis of Tooth Growth for different supplements"
+author: "Conrad Wong"
+output: word_document
+---
+
+# 1. Load the ToothGrowth data and perform some basic exploratory data analyses 
+
+```{r}
+
+library(datasets)
+library(dplyr)
+library(ggplot2)
+
+# par(mfrow=c(1, 2))
+
+table(ToothGrowth$supp, ToothGrowth$dose)
+summary(ToothGrowth)
+
+```
+
+### There are 10 observations for each combination of dose (0.5mg, 1mg and 2mg) and supplement (Orange Juice and Vitamin C)
+
+# 2. Provide a basic summary of the data.
+
+
+
+```{r}
+
+
+ToothGrowth %>% group_by(dose, supp) %>% summarize(mean(len))
+
+g <- ggplot(ToothGrowth, aes(as.factor(dose), len)) + geom_boxplot(aes(fill=supp))
+g <- g + labs(title="Average tooth length by supplement and dose", x="Dose", y="Tooth length")
+
+g
+
+```
+
+### From observing the summary table and the boxplot, it looks like tooth length increases as the dose increases.  For doses 0.5mg and 1mg, it seems that Orange Juice (OJ) results in increased tooth length than Vitamin C (VC).  For dose 2.0 there doesn't seem to be a big difference between both.  We'll use hypothesis testing to validate these findings.
+
+
+# 3. Use confidence intervals and/or hypothesis tests to compare tooth growth by supplement and dose. (Only use the techniques from class, even if there's other approaches worth considering)
+
+We'll test the following two hypothesis:
+
+1) Dose of 2mg results in longer tooth than 1mg (hypothesis is "greater than")
+2) Dose of 1mg results in longer tooth than 0.5mg (hypothesis is "greater than")
+
+
+```{r}
+
+dose05 <- ToothGrowth[ToothGrowth$dose == 0.5, ]
+dose1 <- ToothGrowth[ToothGrowth$dose == 1, ]
+t.test(dose1$len, dose05$len, var.equal=FALSE, alternative = "greater")
+
+dose2 <- ToothGrowth[ToothGrowth$dose == 2, ]
+
+t.test(dose2$len, dose1$len, var.equal=FALSE, alternative = "greater")
+
+```
+
+### Conclusions:
+### 1. Dose 1mg and 0.5mg comparison: The p-value of the test is 6.342e-08, so the null hypothesis is rejected (since it's less than alpha=5%), and we can conclude that the teeth length is greater for dose 1mg than dose 0.5mg.  This can also be confirmed since 0 is not included in the confidence interval for the difference: 6.753323 to Inf
+### 2. Dose 2mg and 1mg comparison: The p-value of the test is 9.532e-06, so the null hypothesis is rejected (since it's less than alpha=5%), and we can conclude that the teeth length is greater for  2mg than 1mg.  This can also be confirmed since 0 is not included in the confidence interval for the difference: 4.17387 to Inf
+
+Now, we'll test if there's a difference between the supplements within each dose:
+
+1) Orange Juice vs. Vitamin C for dose 0.5
+2) Orange Juice vs. Vitamin C for dose 1
+3) Orange Juice vs. Vitamin C for dose 2
+
+```{r}
+
+
+t.test(len~supp, var.equal=FALSE, data=dose05)
+t.test(len~supp, var.equal=FALSE, data=dose1)
+t.test(len~supp, var.equal=FALSE, data=dose2)
+
+```
+
+
+### Conclusions:
+### 1. Dose 0.5mg: The p-value of the test is 0.006359, so the null hypothesis is rejected (since it's less than alpha=5%), and we can conclude that there is a difference between Orange Juice and Vitamin C for this dose.
+### 2. Dose 1mg: The p-value of the test is 0.001038, so the null hypothesis is rejected (since it's less than alpha=5%), and we can conclude that there is a difference between Orange Juice and Vitamin C for this dose.
+### 3. Dose 2mg: The p-value of the test is 0.9639, so we fail to reject the null hypothesis (since it's higher than alpha=5%), and we cannot conclude that there is a difference between Orange Juice and Vitamin C for this dose
+
+
+#4.State your conclusions and the assumptions needed for your conclusions.
+
+
+### Final Conclusion: As the dose increases, the theeth grow bigger.  At dose 2mg, using Orange Juice or Vitamin C makes no difference.  If you use dose 0.5mg or 1mg, using Orange Juice will result in bigger teeth.
+
+### Assumptions: The analysis assumes unequal variances, to be on the safe side.  It also assumes data is approximately normal.
+
